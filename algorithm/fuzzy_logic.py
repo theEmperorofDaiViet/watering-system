@@ -2,41 +2,27 @@ import numpy as np
 
 class FuzzyLogic():
 
+    RULES_SET = {
+        '002': 0,        '100': 2,        '101': 2,
+        '102': 3,        '110': 1,        '111': 1,
+        '112': 2,        '121': 0,        '122': 1,
+        '200': 3,        '201': 3,        '202': 3,
+        '210': 2,        '211': 2,        '212': 3,
+        '220': 1,        '221': 1,        '222': 2,
+        '300': 3,        '301': 3,        '302': 3,
+        '310': 2,        '311': 2,        '312': 3,
+        '320': 1,        '321': 2,        '322': 2
+    }
+
     def __init__(self):
         self.membership_values_of_temperature = np.array([0., 0., 0., 0.])
         self.membership_values_of_soil_moisture = np.array([0., 0., 0., 0.])
         self.membership_values_of_light_intensity = np.array([0., 0., 0.])
         self.membership_values_of_watering_speed = np.array([0., 0., 0., 0.])
-
-    RULES_SET = {
-        '001': 0,
-        '100': 2,
-        '101': 2,
-        '102': 3,
-        '110': 1,
-        '111': 1,
-        '112': 2,
-        '121': 0,
-        '122': 1,
-        '200': 3,
-        '201': 3,
-        '202': 3,
-        '210': 2,
-        '211': 2,
-        '212': 3,
-        '220': 1,
-        '221': 1,
-        '222': 2,
-        '300': 3,
-        '301': 3,
-        '302': 3,
-        '310': 2,
-        '311': 2,
-        '312': 3,
-        '320': 1,
-        '321': 2,
-        '322': 2
-    }
+        self.max1 = 0
+        self.max2 = 0
+        self.crisp_value = 0
+        self.output = 0
 
     def do_fuzzification_of_temperature(self, temperature):
         if temperature < 5:
@@ -56,6 +42,7 @@ class FuzzyLogic():
             self.membership_values_of_temperature[3] = (1/5) * temperature - 5
         else:
             self.membership_values_of_temperature[3] = 1
+        print("Mờ hoá nhiệt độ", end=": ")
         print(self.membership_values_of_temperature)
 
     def do_fuzzification_of_soil_moisture(self, soil_moisture):
@@ -76,6 +63,7 @@ class FuzzyLogic():
             self.membership_values_of_soil_moisture[3] = (1/10) * soil_moisture - (13/2)
         else:
             self.membership_values_of_soil_moisture[3] = 1
+        print("Mờ hoá độ ẩm đất", end=": ")
         print(self.membership_values_of_soil_moisture)
 
     def do_fuzzification_of_light_intensity(self, light_intensity):
@@ -91,9 +79,11 @@ class FuzzyLogic():
             self.membership_values_of_light_intensity[2] = (1/100) * light_intensity - 7
         else:
             self.membership_values_of_light_intensity[2] = 1
+        print("Mờ hoá cường độ ánh sáng PAR", end=": ")
         print(self.membership_values_of_light_intensity)
 
     def do_fuzzy_inference(self):
+        rule_fired = False
         for i in range(self.membership_values_of_temperature.shape[0]):
             combination = ''
             if self.membership_values_of_temperature[i] > 0:
@@ -105,6 +95,7 @@ class FuzzyLogic():
                             if self.membership_values_of_light_intensity[k] > 0:
                                 combination += str(k)
                                 if combination in self.RULES_SET:
+                                    rule_fired = True
                                     [a, b, c] = [int(i) for i in list(combination)]
                                     temperature = self.membership_values_of_temperature[a]
                                     soil_moisture = self.membership_values_of_soil_moisture[b]
@@ -115,44 +106,63 @@ class FuzzyLogic():
 
                                 combination = combination[0:2]
                         combination = combination[0:1]
+        print("Giá trị mờ của tốc độ tưới", end = ": ")
         print(self.membership_values_of_watering_speed)
+        return rule_fired
 
     def do_defuzzification_of_watering_speed(self):
         max_y = max(self.membership_values_of_watering_speed)
-        max_index = self.membership_values_of_watering_speed.argmax()
-
-
         max_x1, max_x2 = 0, 0
+        set_x1 = False
+        
         if self.membership_values_of_watering_speed[0] == max_y:
             if max_y == 1:
                 max_x2 = 2
             else:
                 max_x2 = 3 - max_y
-        elif self.membership_values_of_watering_speed[1] == max_y:
+            set_x1 = True
+        if self.membership_values_of_watering_speed[1] == max_y:
             if max_y == 1:
-                if max_x1 == 0:
+                if set_x1 == False:
                     max_x1 = 3
                 max_x2 = 5
             else:
-                if max_x1 == 0:
+                if set_x1 == False:
                     max_x1 = max_y + 2
                 max_x2 = 6 - max_y
-        elif self.membership_values_of_watering_speed[2] == max_y:
+            set_x1 = True
+        if self.membership_values_of_watering_speed[2] == max_y:
             if max_y == 1:
-                max_x1 = 6
+                if set_x1 == False:
+                    max_x1 = 6
                 max_x2 = 8
             else:
-                max_x1 = max_y + 5
+                if set_x1 == False:
+                    max_x1 = max_y + 5
                 max_x2 = 9 - max_y
-        elif self.membership_values_of_watering_speed[3] == max_y:
+            set_x1 = True
+        if self.membership_values_of_watering_speed[3] == max_y:
             if max_y == 1:
-                if max_x1 == 0:
+                if set_x1 == False:
                     max_x1 = 9
                 max_x2 = 12
             else:
-                if max_x1 == 0:
+                if set_x1 == False:
                     max_x1 = max_y + 8
                 max_x2 = 12
+            set_x1 = True            
         res = (max_x1 + max_x2) / 2
-        print(max_x1, max_x2, res)
+        self.max1 = max_x1
+        self.max2 = max_x2
+        self.crisp_value = res
+        self.output = res / 60000
+        print("Cực đại đầu", end = ": ")
+        print(max_x1)
+        print("Cực đại cuối", end = ": ")
+        print(max_x2)
+        print("Cực đại trung bình", end = ": ")
+        print(self.crisp_value)
+        print("Quy đổi sang m3/s", end = ": ")
+        print("{:.10f}".format(self.output))
+        print("___________________________________________")
     

@@ -4,7 +4,6 @@ from skfuzzy import control as ctrl
 import numpy as np
 import matplotlib.pyplot as plt
 from skfuzzy.control.visualization import FuzzyVariableVisualizer
-from skfuzzy.control.fuzzyvariable import FuzzyVariable
 
 st.set_page_config(page_title='Hệ thống tưới cây tự động', page_icon='./images/logo.png')
 st.image(image='./images/logo.png', width=100)
@@ -13,13 +12,6 @@ st.title('Hệ thống tưới cây tự động')
 st.markdown(
     f"""
         <style>
-            /* Add a background to the page, but I don't use it here */
-            # .stApp {{
-            #     background: url("https://thumbs.dreamstime.com/b/healthy-clean-eating-layout-vegetarian-food-diet-nutrition-concept-various-fresh-vegetables-ingredients-salad-white-105567339.jpg");
-            #     background-repeat: no-repeat;
-            #     background-size: cover;
-            # }}
-
             /* Make the default header of streamlit invisible */
             .css-18ni7ap.e8zbici2 {{
                 opacity: 0
@@ -42,6 +34,19 @@ st.markdown(
                 padding-top: 2rem;
                 padding-bottom: 0.25rem;
             }}
+
+            .text {{
+                font-size: 20px
+            }}
+
+            .center {{
+                text-align: center
+            }}
+
+            .text.center {{
+                font-size: 25px
+
+            }}
         </style>
         """, unsafe_allow_html=True
     )
@@ -52,16 +57,35 @@ soil_moisture_input = 0
 light_intensity_input = 0
 
 with st.sidebar:
+    if "page1" not in st.session_state:
+        st.session_state.page1 = {'is_first_load': True, 'temperature': 20.0, 'soil_moisture': 50.0, 'light_intensity': 500.0}
+
+    for k, v in st.session_state.items():
+        st.session_state[k] = v
+
+    def submit_temperature():
+        st.session_state.page1['temperature'] = st.session_state.temperature_input_value
+
+    def submit_soil_moisture():
+        st.session_state.page1['soil_moisture'] = st.session_state.soil_moisture_input_value
+
+    def submit_light_intensity():
+        st.session_state.page1['light_intensity'] = st.session_state.light_intensity_input_value
+
     st.title("Tham số đầu vào")
+    temperature_input = st.number_input("**Nhiệt độ (°C):**", min_value=-20.0, max_value=50.0, step=0.1, value=st.session_state.page1['temperature'], key='temperature_input_value', on_change=submit_temperature)
+    soil_moisture_input = st.number_input("**Độ ẩm đất (%)**", min_value=0.0, max_value=100.0, step=0.1, value=st.session_state.page1['soil_moisture'], key='soil_moisture_input_value', on_change=submit_soil_moisture)
+    light_intensity_input = st.number_input("**Cường độ ánh sáng PAR (µmol/m²/s)**", min_value=0.0, max_value=1000.0, step=0.1, value=st.session_state.page1['light_intensity'], key='light_intensity_input_value', on_change=submit_light_intensity)
 
-    temperature_input = st.number_input("**Nhiệt độ (°C):**", min_value=-20.0, max_value=50.0, step=0.1, value=20.0)
-    soil_moisture_input = st.number_input("**Độ ẩm đất (%)**", min_value=0.0, max_value=100.0, step=0.1, value=50.0)
-    light_intensity_input = st.number_input("**Cường độ ánh sáng PAR (µmol/m²/s)**", min_value=0.0, max_value=1000.0, step=0.1, value=500.0)
-
-    col1, col2, col3 = st.columns([1.15, 1, 1])
-    with col2:
+    col1, col2, col3 = st.columns([1, 0.5, 0.85])
+    with col1:
         if st.button("Nộp"):
+            st.session_state.page1['is_first_load'] = False
             submitted = True
+    with col3:
+        if st.button("Reset"):
+            st.session_state.page1['is_first_load'] = True
+            
 
 def get_fig(self, sim):
     fig, ax = FuzzyVariableVisualizer(self).view(sim)
@@ -96,7 +120,6 @@ watering_speed['rất chậm'] = fuzz.trapmf(watering_speed.universe, [0, 0, 2, 
 watering_speed['chậm'] = fuzz.trapmf(watering_speed.universe, [2, 3, 5, 6])
 watering_speed['nhanh'] = fuzz.trapmf(watering_speed.universe, [5, 6, 8, 9])
 watering_speed['rất nhanh'] = fuzz.trapmf(watering_speed.universe, [8, 9, 12, 12])
-
 # watering_speed.view()
 
 rule1 = ctrl.Rule(temperature['rất lạnh'] & soil_moisture['rất khô'] & light_intensity['mạnh'], watering_speed['rất chậm'])
@@ -127,39 +150,62 @@ rule25 = ctrl.Rule(temperature['nóng'] & soil_moisture['ẩm'] & light_intensit
 rule26 = ctrl.Rule(temperature['nóng'] & soil_moisture['ẩm'] & light_intensity['trung bình'], watering_speed['nhanh'])
 rule27 = ctrl.Rule(temperature['nóng'] & soil_moisture['ẩm'] & light_intensity['mạnh'], watering_speed['nhanh'])
 
-
-
 watering_system = ctrl.ControlSystem([rule1, rule2, rule3, rule4, rule5, rule6, rule7, rule8, rule9, rule10,
                                      rule11, rule12, rule13, rule14, rule15, rule16, rule17, rule18, rule19, rule20,
                                      rule21, rule22, rule23, rule24, rule25, rule26, rule27])
 watering = ctrl.ControlSystemSimulation(watering_system)
 
-# watering.input['Nhiệt độ'] = 27
-# watering.input['Độ ẩm đất'] = 48
-# watering.input['Cường độ ánh sáng'] = 723
-if submitted == True:
+if submitted == False and st.session_state.page1['is_first_load'] == True:
+    st.subheader("Vui lòng nhập các thông số:")
+    st.markdown(
+    """
+    <ul style="padding-left: 2rem">
+    <li>Nhiệt độ (°C)</li>
+    <li>Độ ẩm đất (%)</li>
+    <li>Cường độ ánh sáng PAR (µmol/m²/s)</li>
+    </ul>
+    """, unsafe_allow_html=True)
+    
+if submitted == True or st.session_state.page1['is_first_load'] == False:
     watering.input['Nhiệt độ'] = temperature_input
     watering.input['Độ ẩm đất'] = soil_moisture_input
     watering.input['Cường độ ánh sáng'] = light_intensity_input
 
+    st.subheader("Kết quả tính toán sử dụng thư viện skfuzzy:")
+    print("skfuzzy:")
+
     try:
         watering.compute()
+
         watering_speed.defuzzify_method = 'mom'
-        print(watering_speed.defuzzify_method)
         watering = ctrl.ControlSystemSimulation(watering_system)
         watering.input['Nhiệt độ'] = temperature_input
         watering.input['Độ ẩm đất'] = soil_moisture_input
         watering.input['Cường độ ánh sáng'] = light_intensity_input
         watering.compute()
-        print(watering.output['Tốc độ tưới'])
-        # watering_speed.view(sim=watering)
+        print(f"Cực đại trung bình ({watering_speed.defuzzify_method})", end = ": ")
+        print(round(watering.output['Tốc độ tưới'], 2))
+        st.markdown("<p class='text'>Sử dụng phương pháp cực đại trung bình, xác định được giá trị đầu ra là:</p>", unsafe_allow_html=True)
+        st.markdown(f"<p class='text center'>{'{:.2f}'.format(round(watering.output['Tốc độ tưới'], 2))} lít/phút ~ <b>{'{:.10f}'.format(round(watering.output['Tốc độ tưới'], 2) / 60000)} m3/s</b></p>", unsafe_allow_html=True)
+        fig1 = watering_speed.get_fig(sim=watering)
+        st.write(fig1)
 
-        fig = watering_speed.get_fig(sim=watering)
-        st.write(fig)
-        print("____")
+        watering_speed.defuzzify_method = 'centroid'
+        watering = ctrl.ControlSystemSimulation(watering_system)
+        watering.input['Nhiệt độ'] = temperature_input
+        watering.input['Độ ẩm đất'] = soil_moisture_input
+        watering.input['Cường độ ánh sáng'] = light_intensity_input
+        watering.compute()
+        print(f"Trọng tâm ({watering_speed.defuzzify_method})", end = ": ")
+        print(round(watering.output['Tốc độ tưới'], 2))
+        st.markdown("<p class='text'>Sử dụng phương pháp trọng tâm, xác định được giá trị đầu ra là:</p>", unsafe_allow_html=True)
+        st.markdown(f"<p class='text center'>{'{:.2f}'.format(round(watering.output['Tốc độ tưới'], 2))} lít/phút ~ <b>{'{:.10f}'.format(round(watering.output['Tốc độ tưới'], 2) / 60000)} m3/s</b></p>", unsafe_allow_html=True)
+        fig2 = watering_speed.get_fig(sim=watering)
+        st.write(fig2)
+      
     except ValueError:
+        st.markdown(f"<p class='text'>Từ các giá trị mờ tính được, vận dụng các tập luật đã được định nghĩa, kết luận:</p>", unsafe_allow_html=True)
+        st.markdown("<p class='text center'><b>Không nên tưới cây trong điều kiện này</b></p>", unsafe_allow_html=True)
         print("Crisp output cannot be calculated!")
     submitted = False
-
-
-    plt.show()
+    print("___________________________________________")
