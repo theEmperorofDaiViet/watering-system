@@ -77,7 +77,7 @@ with st.sidebar:
     soil_moisture_input = st.number_input("**Độ ẩm đất (%)**", min_value=0.0, max_value=100.0, step=0.1, value=st.session_state.page1['soil_moisture'], key='soil_moisture_input_value', on_change=submit_soil_moisture)
     light_intensity_input = st.number_input("**Cường độ ánh sáng PAR (µmol/m²/s)**", min_value=0.0, max_value=1000.0, step=0.1, value=st.session_state.page1['light_intensity'], key='light_intensity_input_value', on_change=submit_light_intensity)
 
-    col1, col2, col3 = st.columns([1, 0.5, 0.85])
+    col1, col2, col3 = st.columns([1, 0.5, 0.477])
     with col1:
         if st.button("Nộp"):
             st.session_state.page1['is_first_load'] = False
