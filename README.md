@@ -65,7 +65,7 @@ pip install -r requirements.txt
 
 To run the application, open a terminal and type:
 ```sh
-streamlit run eat_and_fit.py
+streamlit run main.py
 ```
 As usual, the app should automatically open in a new tab in your browser. It runs on port 8501 by default.
 
